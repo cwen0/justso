@@ -4,10 +4,7 @@
 
 package justso
 
-import (
-	"net/http"
-	"strings"
-)
+import "net/http"
 
 // Handle is a function that can be registered to a route to handle HTTP
 // requests. Like http.HandlerFunc, but has a third parameter for the values of
@@ -326,56 +323,4 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	} else {
 		http.NotFound(w, req)
 	}
-}
-
-// StaticFile registers a single route in order to server a single file of the local filesystem.
-// router.StaticFile("favicon.ico", "./resources/favicon.ico")
-func (r *Router) StaticFile(path, filepath string) {
-	if strings.Contains(path, ":") || strings.Contains(path, "*") {
-		panic("URL parameters can not be used when serving a static file")
-	}
-	handler := func() {
-		http.ServeFile(http.ResponseWriter, *http.Request, filepath)
-	}
-	r.GET(path, handler)
-	r.HEAD(path, handler)
-}
-
-// Static serves files from the given file system root.
-// Internally a http.FileServer is used, therefore http.NotFound is used instead
-// of the Router's NotFound handler.
-// To use the operating system's file system implementation,
-// use :
-//     router.Static("/static", "/var/www")
-func (r *Router) Static(path, root string) IRoutes {
-	return r.StaticFS(path, Dir(root, false))
-}
-
-// StaticFS works just like `Static()` but a custom `http.FileSystem` can be used instead.
-func (r *Router) StaticFS(path string, fs http.FileSystem) {
-	if strings.Contains(path, ":") || strings.Contains(path, "*") {
-		panic("URL parameters can not be used when serving a static folder")
-	}
-	handler := r.createStaticHandler(path, fs)
-	urlPattern := path.Join(path, "/*filepath")
-
-	// Register GET and HEAD handlers
-	r.GET(urlPattern, handler)
-	r.HEAD(urlPattern, handler)
-}
-
-func (r *Router) createStaticHandler(path string, fs http.FileSystem) Handle {
-	absolutePath := r.calculateAbsolutePath(path)
-	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
-	_, nolisting := fs.(*onlyfilesFS)
-	return func() {
-		if nolisting {
-			c.Writer.WriteHeader(404)
-		}
-		fileServer.ServeHTTP(http.ResponseWriter, *http.Request)
-	}
-}
-
-func (r *Router) calculateAbsolutePath(path string) string {
-	return joinPaths("/", path)
 }
