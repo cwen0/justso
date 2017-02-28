@@ -5,7 +5,6 @@
 package justso
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -498,13 +497,4 @@ func TestRouterLookup(t *testing.T) {
 	if tsr {
 		t.Error("Got wrong TSR recommendation!")
 	}
-}
-
-type mockFileSystem struct {
-	opened bool
-}
-
-func (mfs *mockFileSystem) Open(name string) (http.File, error) {
-	mfs.opened = true
-	return nil, errors.New("this is just a mock")
 }
